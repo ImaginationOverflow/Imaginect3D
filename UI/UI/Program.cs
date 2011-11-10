@@ -10,7 +10,7 @@ namespace UI
         /// </summary>
         static void Main(string[] args)
         {
-            using (Game1 game = new Game1())
+            using (Imaginect3D game = new Imaginect3D())
             {
                 game.Run();
             }
