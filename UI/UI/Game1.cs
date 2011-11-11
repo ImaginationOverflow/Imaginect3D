@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using SpeechRecognitionDemo;
 using UI.Common;
 using UI.Geometry;
 using Microsoft.Xna.Framework;
@@ -27,6 +28,7 @@ namespace UI
         SpriteFont spriteFont;
 
         private MovementTracker _mTracker;
+        private SpeechRecognition _speech;
 
         GeometricPrimitive _primitive;
         bool _movedLeft, _movedRight, _movedUp, _movedDown, _movedBackward, _movedForward;
@@ -49,6 +51,31 @@ namespace UI
         /// </summary>
         protected override void Initialize()
         {
+
+            // SPEECH TEST
+
+            _speech = new SpeechRecognition();
+
+            var c1 = new CommandSpeechRecognition("Save", () =>
+                                                              {
+                                                                  spriteBatch.Begin();
+                                                                  spriteBatch.DrawString(spriteFont, "SAVE.", new Vector2(50, 50), Color.Black);
+                                                                  spriteBatch.End();
+                                                              });
+            var c2 = new CommandSpeechRecognition("open", () =>
+                                                              {
+                                                                  spriteBatch.Begin();
+                                                                  spriteBatch.DrawString(spriteFont, "OPEN.", new Vector2(50, 50), Color.Black);
+                                                                  spriteBatch.End();
+                                                              });
+            var c3 = new CommandSpeechRecognition("close", () => Console.WriteLine("close Action"));
+            var c4 = new CommandSpeechRecognition("left arm", () => Console.WriteLine("left arm  Action"));
+
+            _speech.AddCommand(c1, c2, c3, c4);
+            _speech.InicializeSpeechRecognize();
+            _speech.Start();
+
+
             _primitive = new CubePrimitive(GraphicsDevice);
             Components.Add(new FrameRateCounter(this));
             

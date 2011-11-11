@@ -24,7 +24,7 @@ namespace UI
             {
                 
                 Runtime.Kinects[0].Uninitialize();
-                throw e;
+                throw;
             }
         }
     }
