@@ -119,6 +119,7 @@
     <Compile Include="Geometry\CubePrimitive.cs" />
     <Compile Include="Geometry\CylinderPrimitive.cs" />
     <Compile Include="Geometry\GeometricPrimitive.cs" />
+    <Compile Include="Geometry\Model.cs" />
     <Compile Include="Geometry\SpherePrimitive.cs" />
     <Compile Include="Geometry\TorusPrimitive.cs" />
     <Compile Include="Geometry\VertexPositionNormal.cs" />
