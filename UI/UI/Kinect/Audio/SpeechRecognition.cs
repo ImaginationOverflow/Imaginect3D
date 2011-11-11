@@ -81,7 +81,8 @@ namespace SpeechRecognitionDemo
                                         SystemMode = SystemMode.OptibeamArrayOnly,
                                         FeatureMode = true,
                                         AutomaticGainControl = false,
-                                        MicArrayMode = MicArrayMode.MicArrayAdaptiveBeam
+                                        MicArrayMode = MicArrayMode.MicArrayExternBeam,
+                                        MicArrayBeamAngle = 0
                                     };
                 _stream = new StreamFilter(_kinectSource.Start());
                 _sre.SetInputToAudioStream(_stream, new SpeechAudioFormatInfo(
@@ -95,6 +96,14 @@ namespace SpeechRecognitionDemo
                Console.WriteLine(e.Message);
                 throw e;
             }
+        }
+
+        public void UpdateMicBeamAngle(double angle)
+        {
+            //_kinectSource.Stop();
+            _kinectSource.MicArrayBeamAngle = angle;
+            
+
         }
 
         public void Stop()

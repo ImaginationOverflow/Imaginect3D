@@ -93,6 +93,8 @@ namespace UI
             this.Exiting += (s, arg) => nui.Uninitialize();
 
             _mTracker = new MovementTracker(nui);
+            _mTracker.AddMovementHandler(MovementType.Any, 0.1f, OnSkeletonMovement, JointID.Head);
+
             //_mTracker.AddMovementHandler(MovementType.Any, 0.01f, OnHandsChanged, JointID.HandRight);
             //_mTracker.AddMovementHandler(MovementType.Any, 0.07f, OnRotateGesture, JointID.HandRight, JointID.HandLeft);
             _rotateGesture = new RotateGesture(this, _mTracker);
@@ -103,6 +105,11 @@ namespace UI
             
             _mTracker.OnSkeletonOnViewChange += UpdateSkeletonState;
             base.Initialize();
+        }
+
+        private void OnSkeletonMovement(object state, MovementHandlerEventArgs args)
+        {
+            _speech.UpdateMicBeamAngle(Math.Atan(args.KinectCoordinates.Y / args.KinectCoordinates.X));
         }
 
         private bool _startYRightRotation, _startYLeftRotation;

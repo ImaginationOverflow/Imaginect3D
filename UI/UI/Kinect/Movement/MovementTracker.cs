@@ -68,6 +68,7 @@ namespace UI.Kinect.Movement
 
         public event SkeletonOnViewHandler OnSkeletonOnViewChange;
 
+
         private readonly Runtime _kinectRuntime;
 
 
