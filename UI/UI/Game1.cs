@@ -49,7 +49,7 @@ namespace UI
         /// </summary>
         protected override void Initialize()
         {
-            _primitive = new CubePrimitive(GraphicsDevice);
+            _primitive = new ConePrimitive(GraphicsDevice);
             Components.Add(new FrameRateCounter(this));
             
             nui = Runtime.Kinects[0];
@@ -70,10 +70,15 @@ namespace UI
             //_mTracker.AddMovementHandler(MovementType.Any, 0.07f, OnRotateGesture, JointID.HandRight, JointID.HandLeft);
             _rotateGesture = new RotateGesture(this, _mTracker);
             _translationGesture = new TranslationGesture(this, _mTracker);
-            Components.Add(_translationGesture);
-            _rotateGesture.Register();
-            _translationGesture.Register();
+            _scaleGesture = new ScaleGesture(this, _mTracker);
+            _scaleGesture.Register();
+            //Components.Add(_translationGesture);
+            //Components.Add(_rotateGesture);
+            Components.Add(_scaleGesture);
+            //_rotateGesture.Register();
+            //_translationGesture.Register();
             
+
             _mTracker.OnSkeletonOnViewChange += UpdateSkeletonState;
             base.Initialize();
         }
@@ -114,10 +119,7 @@ namespace UI
         
         private Vector3 ConvertRealWorldPoint(Vector position)
         {
-            var returnVector = new Vector3();
-            returnVector.X = position.X * 10;
-            returnVector.Y = position.Y * 10;
-            returnVector.Z = position.Z;
+            var returnVector = new Vector3 {X = position.X*10, Y = position.Y*10, Z = position.Z};
             return returnVector;
         }
 
@@ -156,8 +158,7 @@ namespace UI
 
 
             _current = gameTime.TotalGameTime;
-            _rotateGesture.Update(gameTime);
-
+            
             if (_old == null)
                 _old = _current;
 
@@ -174,6 +175,7 @@ namespace UI
 
         private RotateGesture _rotateGesture;
         private TranslationGesture _translationGesture;
+        private ScaleGesture _scaleGesture;
 
         protected override void Draw(GameTime gameTime)
         {
@@ -200,8 +202,9 @@ namespace UI
 
 
             //world = Matrix.Multiply(Matrix.CreateRotationY(yRotation), Matrix.CreateTranslation(ConvertRealWorldPoint(rightHandVector)));
-            world = _rotateGesture.GetRotationMatrix();
-            world = Matrix.Multiply(world, _translationGesture.GetTranslationMatrix());
+            //world = _rotateGesture.GetRotationMatrix();
+            //world = Matrix.Multiply(world, _translationGesture.GetTranslationMatrix());
+            world = _scaleGesture.GetScaleMatrix();    
             Matrix view = Matrix.CreateLookAt(new Vector3(0, 0, 5f), Vector3.Zero, Vector3.Up);
             Matrix projection = Matrix.CreatePerspectiveFieldOfView(1, GraphicsDevice.Viewport.AspectRatio, 1, 6);
 
@@ -216,12 +219,7 @@ namespace UI
     {
         public static String ArraysToString(this MovementType[] arr)
         {
-            String a = "";
-            foreach (var movementType in arr)
-            {
-                a += movementType + "; ";
-            }
-            return a;
+            return arr.Aggregate("", (current, movementType) => current + (movementType + "; "));
         }
     }
 }

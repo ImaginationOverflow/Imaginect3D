@@ -50,7 +50,7 @@ namespace UI.Kinect.Movement
 
 
 
-        private IDictionary<JointID, Vector> _previousStates = new Dictionary<JointID, Vector>();
+        private readonly IDictionary<JointID, Vector> _previousStates = new Dictionary<JointID, Vector>();
 
         #endregion
 
