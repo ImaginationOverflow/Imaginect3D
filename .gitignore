@@ -5,4 +5,3 @@ bin/
 obj/
 _ReSharper.Imaginect3D
 *.cachefile
-*.csproj

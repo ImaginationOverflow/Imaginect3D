@@ -8,7 +8,7 @@ using UI.Kinect.Movement.EventsArgs;
 
 namespace UI.Kinect.Movement.Gestures
 {
-    public class TranslationGesture : GameComponent 
+    public class TranslationGesture : GameComponent, IGesture 
     {
         private readonly JointID _cursor;
         private readonly MovementTracker _tracker;
@@ -26,6 +26,16 @@ namespace UI.Kinect.Movement.Gestures
         public void Register()
         {
             _tracker.AddMovementHandler(MovementType.Any, 0.1f, OnTranslationGesture, _cursor);
+        }
+
+        public void Unregister()
+        {
+            _tracker.RemoveMoventHandler(MovementType.Any,OnTranslationGesture);
+        }
+
+        public Matrix GetTransformedMatrix()
+        {
+            return GetTranslationMatrix();
         }
 
         private void OnTranslationGesture(object state, MovementHandlerEventArgs args)

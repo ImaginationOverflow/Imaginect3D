@@ -6,7 +6,7 @@ using UI.Kinect.Movement.EventsArgs;
 
 namespace UI.Kinect.Movement.Gestures
 {
-    public class RotateGesture : GameComponent
+    public class RotateGesture : GameComponent, IGesture
     {
         private readonly MovementTracker _tracker;
         private bool _startYRightRotation, _startYLeftRotation, _startXTopRotation, _startXBottomRotation, _startZRightRotation, _startZLeftRotation;
@@ -21,6 +21,16 @@ namespace UI.Kinect.Movement.Gestures
         public void Register()
         {
             _tracker.AddMovementHandler(MovementType.Any, 0.0f, OnRotateGesture, JointID.HandRight, JointID.HandLeft);
+        }
+
+        public void Unregister()
+        {
+            _tracker.RemoveMoventHandler(MovementType.Any,OnRotateGesture);
+        }
+
+        public Matrix GetTransformedMatrix()
+        {
+            return GetRotationMatrix();
         }
 
         private void OnRotateGesture(object state, MovementHandlerEventArgs args)
