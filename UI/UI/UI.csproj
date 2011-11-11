@@ -111,10 +111,16 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Common\EnumExtensions.cs" />
+    <Compile Include="Common\FrameRateCounter.cs" />
     <Compile Include="Geometry\CubePrimitive.cs" />
     <Compile Include="Geometry\GeometricPrimitive.cs" />
     <Compile Include="Geometry\VertexPositionNormal.cs" />
     <Compile Include="Kinect\Movement\EventsArgs\MovementHandlerEventArgs.cs" />
+    <Compile Include="Kinect\Movement\EventsArgs\SkeletonOnViewEventArgs.cs" />
+    <Compile Include="Kinect\Movement\Extensions\JointDataExtensions.cs" />
+    <Compile Include="Kinect\Movement\Gestures\RotateGesture.cs" />
+    <Compile Include="Kinect\Movement\Gestures\TranslationGesture.cs" />
     <Compile Include="Kinect\Movement\MovementTracker.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Program.cs" />

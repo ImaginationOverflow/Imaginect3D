@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using UI.Common;
 using UI.Geometry;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Audio;
@@ -10,6 +11,9 @@ using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
 using Microsoft.Xna.Framework.Media;
 using Microsoft.Research.Kinect.Nui;
+using UI.Kinect.Movement;
+using UI.Kinect.Movement.EventsArgs;
+using UI.Kinect.Movement.Gestures;
 
 namespace UI
 {
@@ -22,14 +26,18 @@ namespace UI
         SpriteBatch spriteBatch;
         SpriteFont spriteFont;
 
+        private MovementTracker _mTracker;
+
         GeometricPrimitive _primitive;
-        bool _movedLeft, _movedRight;
+        bool _movedLeft, _movedRight, _movedUp, _movedDown, _movedBackward, _movedForward;
 
         Runtime nui;
+
 
         public Imaginect3D()
         {
             graphics = new GraphicsDeviceManager(this);
+           
             Content.RootDirectory = "Content";
         }
 
@@ -42,71 +50,75 @@ namespace UI
         protected override void Initialize()
         {
             _primitive = new CubePrimitive(GraphicsDevice);
-
+            Components.Add(new FrameRateCounter(this));
+            
             nui = Runtime.Kinects[0];
 
-            try {
+            try
+            {
                 nui.Initialize(RuntimeOptions.UseSkeletalTracking);
             }
-            catch(InvalidOperationException) {
+            catch (InvalidOperationException)
+            {
 
             }
 
-            nui.SkeletonFrameReady += new EventHandler<SkeletonFrameReadyEventArgs>(nui_SkeletonFrameReady);
+            this.Exiting += (s, arg) => nui.Uninitialize();
 
+            _mTracker = new MovementTracker(nui);
+            //_mTracker.AddMovementHandler(MovementType.Any, 0.01f, OnHandsChanged, JointID.HandRight);
+            //_mTracker.AddMovementHandler(MovementType.Any, 0.07f, OnRotateGesture, JointID.HandRight, JointID.HandLeft);
+            _rotateGesture = new RotateGesture(this, _mTracker);
+            _translationGesture = new TranslationGesture(this, _mTracker);
+            Components.Add(_translationGesture);
+            _rotateGesture.Register();
+            _translationGesture.Register();
+            
+            _mTracker.OnSkeletonOnViewChange += UpdateSkeletonState;
             base.Initialize();
         }
 
-        private Vector _lastPosition;
-        private bool hasData = false;
+        private bool _startYRightRotation, _startYLeftRotation;
+
+        private void OnRotateGesture(object state, MovementHandlerEventArgs args)
+        {
+            if(args.Joint == JointID.HandRight)
+                _startYRightRotation = args.KinectCoordinates.Z < args.Skeleton.Joints[JointID.ShoulderRight].Position.Z - 0.3 && 
+                    args.KinectCoordinates.Z < args.Skeleton.Joints[JointID.HandLeft].Position.Z - 0.1;
+            else
+                _startYLeftRotation = args.KinectCoordinates.Z < args.Skeleton.Joints[JointID.ShoulderLeft].Position.Z - 0.3 &&
+                    args.KinectCoordinates.Z < args.Skeleton.Joints[JointID.HandRight].Position.Z - 0.1;
+
+            _args = args;
+        }
+
+        private void UpdateSkeletonState(object state, SkeletonOnViewEventArgs args)
+        {
+            _foundSkeleton = args.State == SkeletonOnViewType.Entered;
+        }
+
+        private MovementHandlerEventArgs _args = new MovementHandlerEventArgs() { Movements = new MovementType[0] };
+        private Vector rightHandVector, leftHandVector;
+
+
+        private void OnHandsChanged(object state, MovementHandlerEventArgs args)
+        {
+            if (args.Joint == JointID.HandRight)
+                rightHandVector = args.KinectCoordinates;
+        }
+
         private bool _foundSkeleton;
 
         TimeSpan _current;
         TimeSpan _old;
-
-        void nui_SkeletonFrameReady(object sender, SkeletonFrameReadyEventArgs e)
+        
+        private Vector3 ConvertRealWorldPoint(Vector position)
         {
-            SkeletonFrame frame = e.SkeletonFrame;
-            SkeletonData data = frame.Skeletons.Where(sk => sk.TrackingState == SkeletonTrackingState.Tracked).FirstOrDefault();
-            bool entered = false;
-            
-            if (data != null && data.TrackingState == SkeletonTrackingState.Tracked)
-            {
-                _foundSkeleton = true;
-                entered = true;
-
-                Joint rightHand = data.Joints[JointID.HandRight];
-                Vector currentPosition = rightHand.Position;
-                if(_current - _old > TimeSpan.FromMilliseconds(100)){
-                if (hasData)
-                {
-                    float dif = currentPosition.X - _lastPosition.X;
-   
-                    if(dif > 0.1) 
-                    {
-                        _movedRight = true;
-                        _movedLeft = false;
-                    }
-                    else if(dif < -0.1) 
-                    {
-                        _movedRight = false;
-                        _movedLeft = true;
-                    }
-                    else 
-                    {
-                        _movedLeft = _movedRight = false;
-                    }
-
-                }
-
-                _old = _current;
-                _lastPosition = rightHand.Position;
-                hasData = true; 
-            }
-            }
-
-            if(!entered)
-                _foundSkeleton = false;
+            var returnVector = new Vector3();
+            returnVector.X = position.X * 10;
+            returnVector.Y = position.Y * 10;
+            returnVector.Z = position.Z;
+            return returnVector;
         }
 
         /// <summary>
@@ -142,20 +154,27 @@ namespace UI
             if (GamePad.GetState(PlayerIndex.One).Buttons.Back == ButtonState.Pressed)
                 this.Exit();
 
-            
+
             _current = gameTime.TotalGameTime;
-            
+            _rotateGesture.Update(gameTime);
 
             if (_old == null)
-                _old = _current; 
-            
+                _old = _current;
+
             base.Update(gameTime);
         }
+
         Matrix world;
+
         /// <summary>
         /// This is called when the game should draw itself.
         /// </summary>
         /// <param name="gameTime">Provides a snapshot of timing values.</param>
+        private float yRotation = 0.1f;
+
+        private RotateGesture _rotateGesture;
+        private TranslationGesture _translationGesture;
+
         protected override void Draw(GameTime gameTime)
         {
             GraphicsDevice.Clear(Color.CornflowerBlue);
@@ -163,20 +182,46 @@ namespace UI
 
             Vector3 translation;
 
-            if (_foundSkeleton) spriteBatch.DrawString(spriteFont, "Found Skeleton", new Vector2(48, 48), Color.White);
-                        
-            if (_movedLeft)
-                world = Matrix.CreateTranslation(Vector3.Left);
-            else if (_movedRight)
-                world = Matrix.CreateTranslation(Vector3.Right);
+            if (_foundSkeleton)
+            {
+                spriteBatch.DrawString(spriteFont, "Found Skeleton.", new Vector2(48, 48), Color.White);
+                //spriteBatch.DrawString(spriteFont, "LEngt : " + Extensions.ArraysToString(_args.Movements), new Vector2(48, 70), Color.White);
+                if(_args.Skeleton != null)
+                spriteBatch.DrawString(spriteFont, "Shoulder: " + _args.Skeleton.Joints[JointID.ShoulderRight].Position.Z + " hand: " + _args.KinectCoordinates.Z,  new Vector2(48, 70), Color.White);
+            }
 
+
+
+            //world = Matrix.CreateTranslation(ConvertRealWorldPoint(rightHandVector));
+          //  if (_startYRightRotation)
+           //     yRotation += (float )gameTime.ElapsedGameTime.TotalMilliseconds * 0.001f;
+           // else if(_startYLeftRotation)
+           //     yRotation -= (float)gameTime.ElapsedGameTime.TotalMilliseconds * 0.001f;
+
+
+            //world = Matrix.Multiply(Matrix.CreateRotationY(yRotation), Matrix.CreateTranslation(ConvertRealWorldPoint(rightHandVector)));
+            world = _rotateGesture.GetRotationMatrix();
+            world = Matrix.Multiply(world, _translationGesture.GetTranslationMatrix());
             Matrix view = Matrix.CreateLookAt(new Vector3(0, 0, 5f), Vector3.Zero, Vector3.Up);
-            Matrix projection = Matrix.CreatePerspectiveFieldOfView(1, GraphicsDevice.Viewport.AspectRatio, 1, 10);
+            Matrix projection = Matrix.CreatePerspectiveFieldOfView(1, GraphicsDevice.Viewport.AspectRatio, 1, 6);
 
             _primitive.Draw(world, view, projection, Color.Red);
-            
+
             spriteBatch.End();
             base.Draw(gameTime);
+        }
+    }
+
+    public static class Extensions
+    {
+        public static String ArraysToString(this MovementType[] arr)
+        {
+            String a = "";
+            foreach (var movementType in arr)
+            {
+                a += movementType + "; ";
+            }
+            return a;
         }
     }
 }
