@@ -4,6 +4,7 @@ using System.Linq;
 using System.Text;
 using Microsoft.Research.Kinect.Nui;
 using Microsoft.Xna.Framework;
+using Microsoft.Xna.Framework.Graphics;
 using UI.Kinect.Movement.EventsArgs;
 
 namespace UI.Kinect.Movement.Gestures
@@ -41,6 +42,11 @@ namespace UI.Kinect.Movement.Gestures
         private void OnTranslationGesture(object state, MovementHandlerEventArgs args)
         {
             _vector = args.KinectCoordinates;
+            /*/
+                Game.GraphicsDevice.Viewport.Project(ConvertRealWorldPoint(args.KinectCoordinates),
+                                                     Matrix.CreatePerspectiveFieldOfView(1,Game.GraphicsDevice.Viewport.AspectRatio, 1, 10),
+                                                     Matrix.CreateLookAt(new Vector3(0, 0, 5f), Vector3.Zero, Vector3.Up),
+                                                     Matrix.Identity); //*/
         }
 
         public Matrix GetTranslationMatrix()
@@ -51,6 +57,7 @@ namespace UI.Kinect.Movement.Gestures
         public override void Update(GameTime gameTime)
         {
             _matrix = Matrix.CreateTranslation(ConvertRealWorldPoint(_vector));
+            //_matrix = Matrix.CreateTranslation(_vector);
         }
 
         private static Vector3 ConvertRealWorldPoint(Vector position)

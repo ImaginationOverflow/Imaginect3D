@@ -81,7 +81,9 @@ namespace SpeechRecognitionDemo
                                         SystemMode = SystemMode.OptibeamArrayOnly,
                                         FeatureMode = true,
                                         AutomaticGainControl = false,
-                                        MicArrayMode = MicArrayMode.MicArrayAdaptiveBeam
+                                        MicArrayMode = MicArrayMode.MicArrayExternBeam,
+                                        MicArrayBeamAngle = 0
+
                                     };
                 _stream = new StreamFilter(_kinectSource.Start());
                 _sre.SetInputToAudioStream(_stream, new SpeechAudioFormatInfo(

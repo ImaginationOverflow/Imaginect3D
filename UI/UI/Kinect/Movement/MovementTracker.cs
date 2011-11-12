@@ -13,6 +13,8 @@ namespace UI.Kinect.Movement
 
     public delegate void SkeletonOnViewHandler(object state, SkeletonOnViewEventArgs args);
 
+    public delegate void SkeletonDataReadyHandler(object state, SkeletonDataReadyEventArgs args);
+
     public enum MovementType
     {
         Up,
@@ -68,25 +70,50 @@ namespace UI.Kinect.Movement
 
         public event SkeletonOnViewHandler OnSkeletonOnViewChange;
 
+        public event SkeletonDataReadyHandler OnSkeletonDataReceived;
+
         private readonly Runtime _kinectRuntime;
 
 
         public MovementTracker(Runtime kinectRuntime)
         {
-
             _kinectRuntime = kinectRuntime;
             kinectRuntime.SkeletonFrameReady += OnSkeletonFrameReady;
+
+            kinectRuntime.SkeletonEngine.TransformSmooth = true;
+            TransformSmoothParameters parameters = new TransformSmoothParameters();
+            parameters.Smoothing = 0.7f;
+            parameters.Correction = 0.3f;
+            parameters.Prediction = 0.4f;
+            parameters.JitterRadius = 1.0f;
+            parameters.MaxDeviationRadius = 0.5f;
+            kinectRuntime.SkeletonEngine.SmoothParameters = parameters;
         }
 
+        private int _previousSelectedSkeleton = -1;
         private void OnSkeletonFrameReady(object sender, SkeletonFrameReadyEventArgs e)
         {
             SkeletonFrame skeletonFrame = e.SkeletonFrame;
-            SkeletonData skeletonData = skeletonFrame.Skeletons.Where(sk => sk.TrackingState == SkeletonTrackingState.Tracked).FirstOrDefault();
-
-
-
+            SkeletonData skeletonData;
+            if(_previousSelectedSkeleton == -1)
+            {
+                skeletonData = skeletonFrame.Skeletons.Where(sk => sk.TrackingState == SkeletonTrackingState.Tracked).FirstOrDefault();
+                _previousSelectedSkeleton = skeletonData.UserIndex;
+            }
+            else
+            {
+                skeletonData = skeletonFrame.Skeletons.Where(sk => sk.TrackingState == SkeletonTrackingState.Tracked && sk.UserIndex == _previousSelectedSkeleton).FirstOrDefault();
+                if (skeletonData == null)
+                {
+                    _previousSelectedSkeleton = -1;
+                    OnSkeletonFrameReady(sender,e);
+                }
+            }
+            
             if (skeletonData != null && skeletonData.TrackingState == SkeletonTrackingState.Tracked)
             {
+                OnSkeletonDataReceived.Invoke(this, new SkeletonDataReadyEventArgs { SkeletonData = skeletonData });
+            
                 if (_skeletonPresent == false)
                 {
                     _skeletonPresent = true;

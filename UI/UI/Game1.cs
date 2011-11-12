@@ -12,10 +12,13 @@ using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
 using Microsoft.Xna.Framework.Media;
 using Microsoft.Research.Kinect.Nui;
+using UI.Kinect.Debug;
 using UI.Kinect.Movement;
 using UI.Kinect.Movement.EventsArgs;
 using UI.Kinect.Movement.Gestures;
+using UI.UI;
 using Model = Microsoft.Xna.Framework.Graphics.Model;
+using Mouse = Microsoft.Xna.Framework.Input.Mouse;
 
 namespace UI
 {
@@ -24,7 +27,7 @@ namespace UI
     /// </summary>
     public class Imaginect3D : Microsoft.Xna.Framework.Game
     {
-        SpriteBatch spriteBatch;
+        
         SpriteFont spriteFont;
 
         private MovementTracker _mTracker;
@@ -52,8 +55,13 @@ namespace UI
         public Imaginect3D()
         {
             graphics = new GraphicsDeviceManager(this);
+           
+            //graphics.PreferredBackBufferHeight = 1024;
+            //graphics.PreferredBackBufferWidth = 768;
+            //graphics.ToggleFullScreen();
 
             Content.RootDirectory = "Content";
+            
         }
 
         /// <summary>
@@ -64,8 +72,9 @@ namespace UI
         /// </summary>
         protected override void Initialize()
         {
+            SpriteBatchSingleton.Instance = new SpriteBatch(GraphicsDevice);
             View = Matrix.CreateLookAt(new Vector3(0, 0, 5f), Vector3.Zero, Vector3.Up);
-            Projection = Matrix.CreatePerspectiveFieldOfView(1, GraphicsDevice.Viewport.AspectRatio, 1, 6);
+            Projection = Matrix.CreatePerspectiveFieldOfView(1, GraphicsDevice.Viewport.AspectRatio, 1, 10);
 
             Geometry.Model model = new Geometry.Model(this);
             Components.Add(model);
@@ -85,6 +94,7 @@ namespace UI
                     torusPrimitive
                 );
             
+
             Components.Add(new FrameRateCounter(this));
             _speechRecognition.AddCommand(
                 new CommandSpeechRecognition("select cone", () =>
@@ -98,6 +108,16 @@ namespace UI
                                                        speech = "cube";
                                                        _primitive = model.GetSingletonPrimitiveInstance<CubePrimitive>();
                                                     }),
+                new CommandSpeechRecognition("select cylinder",() =>
+                                                                   {
+                                                                       speech = "cylinder";
+                                                                       _primitive =model.GetSingletonPrimitiveInstance<CylinderPrimitive>();
+                                                                   }),
+                new CommandSpeechRecognition("select sphere", () =>
+                {
+                    speech = "sphere";
+                    _primitive = model.GetSingletonPrimitiveInstance<SpherePrimitive>();
+                }),
                 new CommandSpeechRecognition("delete all", () =>
                                                     {
                                                         speech = "delete all"; model.ClearAll();
@@ -109,19 +129,23 @@ namespace UI
                                                         _primitive = null;
                                                     })
             );
-            /*/
+            //
             _speechRecognition.InicializeSpeechRecognize();
-            _speechRecognition.Start();
+            //_speechRecognition.Start();
             //*/
-            nui = Runtime.Kinects[0];
 
-            try
+            if (Runtime.Kinects.Count != 0)
             {
-                nui.Initialize(RuntimeOptions.UseSkeletalTracking);
-            }
-            catch (InvalidOperationException)
-            {
+                //use first Kinect
+                nui = Runtime.Kinects[0];         //Initialize to do skeletal tracking
+                try
+                {
+                    nui.Initialize(RuntimeOptions.UseSkeletalTracking);
+                }
+                catch (InvalidOperationException)
+                {
 
+                }
             }
 
             Exiting += (s, arg) =>
@@ -131,7 +155,8 @@ namespace UI
                            };
 
             _mTracker = new MovementTracker(nui);
-            
+
+           
             _rotateGesture = new RotateGesture(this, _mTracker);
             _translationGesture = new TranslationGesture(this, _mTracker);
             _scaleGesture = new ScaleGesture(this, _mTracker);
@@ -144,16 +169,74 @@ namespace UI
             _translationGesture.Register();
 
 
-            _mTracker.OnSkeletonOnViewChange += UpdateSkeletonState;
+
+
+            int width = 120, height = 400;
+
+            RightMenu rightMenu = new RightMenu(this, new Rectangle(graphics.PreferredBackBufferWidth - width, (graphics.PreferredBackBufferHeight - height) / 2, width, height));
+            Components.Add(rightMenu);
+            SkeletonTracker tracker = new SkeletonTracker(this, _mTracker);
+            Components.Add(tracker);
+
+            KinectMouse mouse = new KinectMouse(this, _mTracker, JointID.HandRight);
+            KinectMouseSelection mouseSelection = new KinectMouseSelection(this);
+            Components.Add(mouse);
+            Components.Add(mouseSelection);
+
+            _mTracker.OnSkeletonOnViewChange += (s, args) =>
+            {
+                _foundSkeleton = args.State == SkeletonOnViewType.Entered;
+                mouse.Enable();
+            };
+
+          
+            
+            
+            /*/
+            var token = mouseSelection.GetMouseToken();
+            _mTracker.AddMovementHandler(MovementType.Any,1f,(obj,args)=>
+                                                                 {
+                                                                     if (KinectMouse.MouseCoordinates.Y > 220)
+                                                                     {
+                                                                         mouseSelection.FeedSelection(token);
+                                                                     }
+                                                                     else
+                                                                     {
+                                                                         token = mouseSelection.GetMouseToken();
+                                                                     }
+
+                                                                     if (mouseSelection.IsSelected())
+                                                                     {
+                                                                         token = mouseSelection.GetMouseToken();
+                                                                     }
+                                                                 },
+                                                                 JointID.HandRight);
+            //*/
+            rightMenu.OnSelectedGeometry += (state) =>
+                                                {
+                                                    if (state is CubePrimitive)
+                                                        _primitive =
+                                                            model.GetSingletonPrimitiveInstance<CubePrimitive>();
+                                                    else if (state is CylinderPrimitive)
+                                                        _primitive =
+                                                            model.GetSingletonPrimitiveInstance<CylinderPrimitive>();
+                                                    else if (state is ConePrimitive)
+                                                        _primitive =
+                                                            model.GetSingletonPrimitiveInstance<ConePrimitive>();
+                                                    else if (state is SpherePrimitive)
+                                                        _primitive =
+                                                            model.GetSingletonPrimitiveInstance<SpherePrimitive>();
+                                                    else
+                                                    {
+                                                        return;
+                                                    }
+                                                    mouse.Disable();
+                                                };
             base.Initialize();
         }
 
-        
 
-        private void UpdateSkeletonState(object state, SkeletonOnViewEventArgs args)
-        {
-            _foundSkeleton = args.State == SkeletonOnViewType.Entered;
-        }
+
 
        
 
@@ -166,7 +249,7 @@ namespace UI
         protected override void LoadContent()
         {
             // Create a new SpriteBatch, which can be used to draw textures.
-            spriteBatch = new SpriteBatch(GraphicsDevice);
+           
 
             spriteFont = Content.Load<SpriteFont>("SpriteFont1");
             // TODO: use this.Content to load your game content here
@@ -189,9 +272,10 @@ namespace UI
         protected override void Update(GameTime gameTime)
         {
             // Allows the game to exit
-            if (GamePad.GetState(PlayerIndex.One).Buttons.Back == ButtonState.Pressed)
+            if (Keyboard.GetState(PlayerIndex.One).GetPressedKeys().Contains(Keys.Escape))
                 this.Exit();
-
+            if (Keyboard.GetState(PlayerIndex.One).GetPressedKeys().Contains(Keys.LeftAlt) && Keyboard.GetState(PlayerIndex.One).GetPressedKeys().Contains(Keys.Enter))
+                this.graphics.ToggleFullScreen();
 
 
             base.Update(gameTime);
@@ -206,17 +290,18 @@ namespace UI
         protected override void Draw(GameTime gameTime)
         {
             GraphicsDevice.Clear(Color.CornflowerBlue);
-            spriteBatch.Begin();
+           SpriteBatchSingleton.Instance.Begin(SpriteSortMode.Immediate,BlendState.AlphaBlend);
 
           
             if (_foundSkeleton)
             {
-                spriteBatch.DrawString(spriteFont, "Found Skeleton.", new Vector2(48, 48), Color.White);
-                spriteBatch.DrawString(spriteFont, "Speach: " + speech, new Vector2(48, 70), Color.White);
+                SpriteBatchSingleton.Instance.DrawString(spriteFont, "Found Skeleton.", new Vector2(48, 48), Color.White);
+                SpriteBatchSingleton.Instance.DrawString(spriteFont, "Speach: " + speech, new Vector2(48, 70), Color.White);
+                SpriteBatchSingleton.Instance.DrawString(spriteFont, "Y:"+KinectMouse.MouseCoordinates.Y,new Vector2(48,92),Color.White );
             }
 
 
-
+            
             //world = Matrix.CreateTranslation(ConvertRealWorldPoint(rightHandVector));
             //  if (_startYRightRotation)
             //     yRotation += (float )gameTime.ElapsedGameTime.TotalMilliseconds * 0.001f;
@@ -236,7 +321,7 @@ namespace UI
             if (_primitive != null)
                 _primitive.Draw(world, View, Projection, Color.Red);
 
-            spriteBatch.End();
+            SpriteBatchSingleton.Instance.End();
             base.Draw(gameTime);
         }
     }

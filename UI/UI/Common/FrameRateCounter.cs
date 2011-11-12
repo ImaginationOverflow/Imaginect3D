@@ -28,8 +28,8 @@ namespace UI.Common
         
         protected override void LoadContent()
         {
-            
-                spriteBatch = new SpriteBatch(GraphicsDevice);
+
+            spriteBatch = new SpriteBatch(GraphicsDevice);
                 spriteFont = content.Load<SpriteFont>("SpriteFont1");
             
         }
