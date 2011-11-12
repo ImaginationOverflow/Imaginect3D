@@ -137,7 +137,11 @@ namespace UI
 
         private void OnSkeletonMovement(object state, MovementHandlerEventArgs args)
         {
-            _speechRecognition.UpdateMicBeamAngle(Math.Atan(args.KinectCoordinates.Y / args.KinectCoordinates.X));
+            double angleRadians = 0d;
+            double x = args.KinectCoordinates.X;
+            double y = args.KinectCoordinates.Y;
+            angleRadians = Math.Atan(x/y);  
+            _speechRecognition.UpdateMicBeamAngle(angleRadians);
         }
 
         private bool _startYRightRotation, _startYLeftRotation;

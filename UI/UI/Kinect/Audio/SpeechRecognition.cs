@@ -82,7 +82,7 @@ namespace SpeechRecognitionDemo
                                         FeatureMode = true,
                                         AutomaticGainControl = false,
                                         MicArrayMode = MicArrayMode.MicArrayExternBeam,
-                                        MicArrayBeamAngle = 0
+                                        MicArrayBeamAngle = 0.5
                                     };
                 _stream = new StreamFilter(_kinectSource.Start());
                 _sre.SetInputToAudioStream(_stream, new SpeechAudioFormatInfo(
@@ -100,9 +100,10 @@ namespace SpeechRecognitionDemo
 
         public void UpdateMicBeamAngle(double angle)
         {
-            //_kinectSource.Stop();
+            _kinectSource.Stop();
             _kinectSource.MicArrayBeamAngle = angle;
-            
+            _kinectSource.Start();
+
 
         }
 
@@ -121,9 +122,13 @@ namespace SpeechRecognitionDemo
 
         private  void SreSpeechRecognized(object sender, SpeechRecognizedEventArgs e)
         {
+            Console.WriteLine("Position: {0}", _kinectSource.SoundSourcePositionConfidence);
             string result = e.Result.Text;
-            if (_commands.ContainsKey(result))
-                _commands[result].Command.Invoke();
+            
+                if (_commands.ContainsKey(result))
+                    _commands[result].Command.Invoke();
+            
+    
         }
 
         private  void SreSpeechHypothesized(object sender, SpeechHypothesizedEventArgs e)
