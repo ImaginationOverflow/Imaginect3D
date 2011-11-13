@@ -94,7 +94,8 @@ namespace UI.Kinect.Movement
         private void OnSkeletonFrameReady(object sender, SkeletonFrameReadyEventArgs e)
         {
             SkeletonFrame skeletonFrame = e.SkeletonFrame;
-            SkeletonData skeletonData;
+            SkeletonData skeletonData = skeletonFrame.Skeletons.Where(sk => sk.TrackingState == SkeletonTrackingState.Tracked).FirstOrDefault();
+            /*/
             if(_previousSelectedSkeleton == -1)
             {
                 skeletonData = skeletonFrame.Skeletons.Where(sk => sk.TrackingState == SkeletonTrackingState.Tracked).FirstOrDefault();
@@ -109,7 +110,7 @@ namespace UI.Kinect.Movement
                     OnSkeletonFrameReady(sender,e);
                 }
             }
-            
+            //*/
             if (skeletonData != null && skeletonData.TrackingState == SkeletonTrackingState.Tracked)
             {
                 OnSkeletonDataReceived.Invoke(this, new SkeletonDataReadyEventArgs { SkeletonData = skeletonData });

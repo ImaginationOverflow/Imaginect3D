@@ -60,7 +60,11 @@ namespace UI.Kinect.Movement
             _isEnable = false;
         }
 
- 
+
+        public bool IsEnable()
+        {
+            return _isEnable;
+        }
     }
 
     public class KinectMouseSelection : DrawableGameComponent

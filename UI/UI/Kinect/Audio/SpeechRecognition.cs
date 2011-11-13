@@ -100,10 +100,8 @@ namespace SpeechRecognitionDemo
 
         public void UpdateMicBeamAngle(double angle)
         {
-            _kinectSource.Stop();
+     
             _kinectSource.MicArrayBeamAngle = angle;
-            _kinectSource.Start();
-
 
         }
 

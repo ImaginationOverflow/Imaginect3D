@@ -122,7 +122,7 @@ namespace UI.UI
             }
             else
             {
-                _spriteBatch.DrawString(Game.Content.Load<SpriteFont>("SpriteFont1"), "Shortened", Vector2.UnitX, Color.Red);
+                //_spriteBatch.DrawString(Game.Content.Load<SpriteFont>("SpriteFont1"), "Shortened", Vector2.UnitX, Color.Red);
                 int width = (int)(_dest.Width * 0.10);
                 Rectangle shortenedVersion = new Rectangle(_dest.X + _dest.Width - width, _dest.Y, _dest.Width, _dest.Height);
                 _spriteBatch.Draw(_menuSmallTexture, new Vector2(_dest.X + _dest.Width - _menuSmallTexture.Width, _dest.Y), Color.White);
